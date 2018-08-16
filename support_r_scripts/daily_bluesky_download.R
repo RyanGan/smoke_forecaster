@@ -32,7 +32,7 @@ home_path <- paste0("/srv/www/rgan/smoke_forecaster")
 home_path <- paste0(getwd(), "/")
 
 # RG 2018-08-16: Defining local home directory
-#home_path <- paste0(getwd(), "/")
+home_path <- paste0(getwd(), "/")
 
 # download bluesky daily output -----------------------------------------------
 
@@ -283,8 +283,6 @@ crs(app_r) <- crs(smoke_stack)
 # application grid
 smoke_stack_app <- resample(smoke_stack, app_r, method = 'bilinear')
 
-# removing smoke_stack to save some space
-rm(smoke_stack)
 
 # Create pm matrix of same-day and next-day values. 
 # This will be used later for population-weighting.
@@ -463,8 +461,8 @@ us_shape$FIPS <- us_shape$GEOID
 us_shape <- sp::merge(us_shape, hia_est, by = "FIPS")
 
 # subset to counties with hia estimates of at least 1
-us_shape <- us_shape[us_shape$same_day_resp_ed > 1 | 
-                       us_shape$next_day_resp_ed > 1, ]
+us_shape <- us_shape[(us_shape$same_day_pm > 5 & us_shape$same_day_resp_ed > 1) | 
+                     (us_shape$next_day_pm > 5 & us_shape$next_day_resp_ed > 1), ]
 
 # rename truncated variable names; renamed hia estimates to layer_1 and layer_2
 # to match gridded bluesky forecasts of smoke labels
