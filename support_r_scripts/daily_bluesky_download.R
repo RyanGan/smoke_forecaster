@@ -302,23 +302,29 @@ print("-----------------------------------------------------------------------")
 print("converting smoke_stack to polygon....")
 smk_poly <- raster::rasterToPolygons(smoke_stack_app)
 
+# TODO: Review if this chunk of code needs to be run each time -----------------
+# RG 2018-08-16: Steve, is the following section new? I think with the regrid
+# approach, we don't need to recalculate proportion intersect. I'm going to
+# comment it out
+
 # saving bluesky grid shapefile. We need to know the bluesky grid for overlay
 # calculations related to the health impact assessment. The grid for a given day
 # from a single forecast (common root nc file) should be the same, so save a 
 # single instance of this grid [,1]. 
-smk_grid <- smk_poly[, 1]
-
-# write smoke grid that doesn't have values, overwrite the existing layer.
-writeOGR(obj = smk_grid, 
-         dsn = "./data/bluesky_grid", 
-         layer = "bluesky_grid",
-         overwrite_layer=TRUE,
-         driver = "ESRI Shapefile")
+# smk_grid <- smk_poly[, 1]
+# 
+# # write smoke grid that doesn't have values, overwrite the existing layer.
+# writeOGR(obj = smk_grid, 
+#          dsn = "./data/bluesky_grid", 
+#          layer = "bluesky_grid",
+#          overwrite_layer=TRUE,
+#          driver = "ESRI Shapefile")
+# End Review -------------------------------------------------------------------
 
 # Subset smk_polygon to only those with values > 0. Previously this subset
 # by those that were creater than 5 ugm3. This made for a confusing display where 
 # there were HIA where there were no smoke. This was done to reduce file size. 
-smk_poly_display <- smk_poly[smk_poly$layer.1 > 0 | smk_poly$layer.2 > 0, ]
+smk_poly_display <- smk_poly[smk_poly$layer.1 > 5 | smk_poly$layer.2 > 5, ]
 
 # remove raster files to save memory
 rm(smoke_brick, 
