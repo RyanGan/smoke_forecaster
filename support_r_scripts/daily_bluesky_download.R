@@ -32,7 +32,7 @@ home_path <- paste0("/srv/www/rgan/smoke_forecaster")
 home_path <- paste0(getwd(), "/")
 
 # RG 2018-08-16: Defining local home directory
-home_path <- paste0(getwd(), "/")
+#home_path <- paste0(getwd(), "/")
 
 # download bluesky daily output -----------------------------------------------
 
