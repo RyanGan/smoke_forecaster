@@ -11,7 +11,6 @@ library(tidyverse)
 # extracting population densities from bonne's bluesky grid -----
 pop_nc <- ncdf4::nc_open("./data/blueskypopulation.nc")
 
-cali_id <- bluesky_grid$id
 # extract population and population density for california grid cells
 pop <- as.vector(ncdf4::ncvar_get(pop_nc, varid = "Population"))
 popden <- as.vector(ncdf4::ncvar_get(pop_nc, varid ="PopulationDensity"))
@@ -31,9 +30,7 @@ names(population_df) <- c("lon", "lat", "pop", "popden")
 # sort by desc(lat) then lon to match how i labeled the sf objects
 population_df <- population_df %>%  
   arrange(desc(lat), lon) %>% 
-  mutate(id = seq(1:94068)) %>% 
-  dplyr::select(id, pop, popden)
-
+  mutate(id = seq(1:94068)) 
 
 # saving population density and population vector
 write_csv(population_df, paste0("./data/2015-bluesky_grid_population.csv"))
