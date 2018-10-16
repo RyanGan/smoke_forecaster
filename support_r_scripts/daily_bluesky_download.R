@@ -51,6 +51,8 @@ if(machine_name == "salix"){
   home_path <- paste0(getwd(), "/")
 }
 
+home_path <- paste0(getwd(), "/")
+
 # download bluesky daily output -----------------------------------------------
 
 # download fire locations from bluesky runs ----
@@ -274,7 +276,7 @@ nc_path <- paste0(home_path, "data/smoke_dispersion_v2.nc")
 
 # get nc data as raster as class "RasterBrick"
 smoke_brick <- brick(nc_path)
-print("Made it here")
+
 ################################################################################
 # Calculate daily average smoke concentrations 
 ################################################################################
@@ -298,7 +300,16 @@ todays_day_numeric <- as.numeric(format(Sys.Date(), "%d"))
 # Create raster layer of same day mean value and take the mean of those (hourly)
 # values for the selected date. 
 t_index <- which(todays_day_numeric==forecastDay)
+
+print(todays_day_numeric)
+print(forecastDay)
+print(t_index)
+print(nlayers(smoke_brick))
+print('made it here')
+
 same_day_mean_smk <- mean(smoke_brick[[t_index]])
+
+print(same_day_mean_smk)
 
 # extract the date without timestamp (taking element date 29 from 1:29)
 same_day_date <- unique( format(time_denver[t_index], format = "%b %d %Y") )
@@ -309,7 +320,6 @@ next_day_mean_smk <- mean(smoke_brick[[t_index]])
 next_day_date <- unique( format(time_denver[t_index], format = "%b %d %Y") )
 
 # A third day
-
 
 # TODO: Same more dates data and use the actual dates as the labels. 
 # creating a vector of the character dates and saving to use in shiny labels
@@ -336,8 +346,7 @@ population_grid <- data.table::fread("./data/2015-bluesky_grid_population.csv")
 app_extent <- extent(min(population_grid[,1]), max(population_grid[,1]),
                      min(population_grid[,2]), max(population_grid[,2]))
 
-# Application coordinates
-app_coords <- as.matrix(population_grid[,1:2])
+# Application coordinatesapp_coords <- as.matrix(population_grid[,1:2])
 
 # Creating empty raster based on dimension of application grid
 app_r <- raster(app_extent, nrow=201, ncol=468)
