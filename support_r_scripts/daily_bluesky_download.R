@@ -1,3 +1,13 @@
+#!/usr/bin/env Rscript
+args = commandArgs(trailingOnly=TRUE)
+if(length(args)>0){
+  machine_name <- args[1]
+}else{
+  machine_name <- "local"
+}
+print(paste("Passed arguments:"))
+print(args)
+
 # ------------------------------------------------------------------------------
 # Title: Daily BlueSky forecast download and data management
 # Authors: Ryan Gan & Steven Brey 
@@ -8,13 +18,13 @@
 # This is run in a crontab. The following code shows the current setting for
 # the crontab on the server computer:
 #
-# 00 10 * * * Rscript APP_DIR/support_r_scripts/daily_bluesky_download.R
+# 00 10 * * * Rscript APP_DIR/support_r_scripts/daily_bluesky_download.R salix
 #
 # Note: Code directly from mazamascience to download their USFS BlueSky runs
 # http://mazamascience.com/Classes/PWFSL_2014/Lesson_07_BlueSky_FirstSteps.html#downloadbsoutput\
 
 # libraries needed
-library(ncdf4) # netcdf files
+library(ncdf4) 
 library(stringr)
 library(raster) # easier to manipulate than netcdf file
 library(rgdal)
@@ -24,88 +34,142 @@ library(data.table) # will interfere with lubridate so use libridate::FUNCTION
 
 # TODO: consider these as possible user arguments 
 # RG 2018-08-16: Ask Steve to explain his thought here
+# SB 2018-08-21: I think we may use different models output in the future. 
 model <- "GFS-0.15deg"
-setwd("/srv/www/rgan/smoke_forecaster")
+PMThresh <- 2
 
-# define path to repository for the server for writing files
-home_path <- paste0("/srv/www/rgan/smoke_forecaster")
-home_path <- paste0(getwd(), "/")
-
-# RG 2018-08-16: Defining local home directory
-home_path <- paste0(getwd(), "/")
+if(machine_name == "salix"){
+  
+  print("-----------------------------------------------")
+  print("Code running on salix")
+  setwd("/srv/www/rgan/smoke_forecaster/")
+  # define path to repository for the server for writing files
+  home_path <- paste0("/srv/www/rgan/smoke_forecaster/")
+  print(paste("Working directory set to:", home_path))
+  print("-----------------------------------------------")
+  
+}else{
+  # Local development taking place. 
+  home_path <- paste0(getwd(), "/")
+}
 
 # download bluesky daily output -----------------------------------------------
-
-# date is needed for download; taking out "-" separator. 00Z and 12Z forecasts
-# will be aquiured, whatever is newest. 
-todays_date <- paste0(gsub("-","", Sys.Date()))
 
 # download fire locations from bluesky runs ----
 # note right now I download only the location file, but I may work in
 # fire information in the future. looks like it's contained in the json file
 # Note: changed "forecast" to "combined" estimate on Sept 5 2017
-
 url_base <- paste0("https://smoke.airfire.org/bluesky-daily/output/standard/", model,"/")
-todays_dir <- paste0(url_base, todays_date)
 
 # Check to see if todays date 12Z forecast exists. 
-if ( url.exists( paste0(todays_dir,"12/combined") ) ){
+# TODO: These if statements need to be a while loop that goes back in time 
+# TODO: until the condition is satisfied. 
+check_for_files <- function(URL){
   
-  print("12Z forecast latest available, being used")
-  forecast_url <- paste0(todays_dir,"12/combined")
+  fire_locations_test <- FALSE
+  smoke_dispersion_test <- FALSE
   
-} else if( url.exists( paste0(todays_dir,"00/combined") ) ){
+  # See if fire_locations.csv exists, if it does, download and check for size.
+  fire_locations_file <- paste0(URL, "/fire_locations.csv")
+  if(url.exists(fire_locations_file)){
+    
+    fire_locations_dest <- paste0(home_path, "data/fire_locations_test.csv")
+    download.file(url = fire_locations_file,
+                  destfile = fire_locations_dest, 
+                  mode = "wb")
+    
+    # Now check the size of the downloaded file
+    if (file.info(fire_locations_dest)$size > 2){
+      fire_locations_test <- TRUE
+    }
+  }
   
-  print("00Z forecast latest available, being used")
-  forecast_url <- paste0(todays_dir,"00/combined")
+  # See if smoke_dispersion.nc exists, if it does, download and check for size.
+  smoke_dispersion_file <- paste0(URL, "/smoke_dispersion.nc")
+  if(url.exists(smoke_dispersion_file)){
+    
+    smoke_dispersion_dest <- paste0(home_path, "data/smoke_dispersion_test.nc")
+    download.file(url = smoke_dispersion_file,
+                  destfile = smoke_dispersion_dest, 
+                  mode = "wb")
+    
+    # Now check the size of the downloaded file
+    if (file.info(smoke_dispersion_dest)$size > 2){
+      smoke_dispersion_test <- TRUE
+    }
+  }
   
-} else {
+  # Every condition needs to be true in order to use data from this model run  
+  combined_check <- c(fire_locations_test, smoke_dispersion_test)
   
-  # No grids for todays data available yet. Try yesterday.
-  yesterday <- Sys.Date()-1
-  forecast_url <- paste0(url_base, gsub("-","", yesterday), "12/combined")
+  if(all(combined_check)){
+    
+    result <- TRUE
+    # When we have both, rename these files, get rid of appended "test" at 
+    # end of name
+    file.rename(fire_locations_dest, paste0(home_path, "data/fire_locations.csv"))
+    file.rename(smoke_dispersion_dest, paste0(home_path, "data/smoke_dispersion_test.nc"))
+    
+  } else{
+    result <- FALSE
+  }
+  return(result)
   
 }
 
-# TODO: See if this file already exists!!!! If it does, halt this script here
-# TODO: and do nothing until the file is new! 
-
-# Create path to online data directory for last available model run
-online_data_path <- paste0(forecast_url, "/data/")
+dataSearch <- TRUE # while this is T, search for data 
+loopCount  <- 0
+date_to_check <- paste0(gsub("-","", Sys.Date())) # Start with today
+while(dataSearch){
+  
+  print(paste("Searching for data on:", date_to_check))
+  
+  # Search for 12Z forecast for this date
+  URL <- paste0(url_base, date_to_check, "12/combined/data")
+  dataSearch <- !check_for_files(URL)
+  forecast_hour <- "12"
+  
+  # If no 12Z forecast available for this date, check for 00Z forecast instead
+  if(dataSearch){
+    URL <- paste0(url_base, date_to_check, "00/combined/data")
+    dataSearch <- !check_for_files(URL)
+    forecast_hour <- "00"
+  }
+  # Store for the user, in case this is the last time through the loop 
+  forecast_date <- date_to_check
+  
+  # Go back a day in the POSIXct space
+  loopCount <- loopCount + 1
+  date_to_check <- paste0(gsub("-","", Sys.Date()-loopCount))
+  
+}
+ 
+print(paste("Fire and smoke data aquired for:", forecast_date, forecast_hour))
 
 # Create a file connection that will log what this script tries to do and when
 # it tries to do it. 
 download_log <- file("bluesky_download_log.txt")
 line1 <- paste("Download log for:", Sys.time())
+line2 <- paste("Forecast Date:", forecast_date)  
+line3 <- paste("Forecast Hour:", forecast_hour)
 
-# file specific urls
-fire_locations_url <- paste0(online_data_path, "fire_locations.csv")
-smoke_dispersion_url <- paste0(online_data_path, "smoke_dispersion.nc")
-
-line2 <- paste("fire locations file: ", fire_locations_url)
-line3 <- paste("smoke dispersion file: ", smoke_dispersion_url)
-
-# Get fire locations ----
-try_locations <- try(download.file(url = fire_locations_url,
-                                   destfile = paste0(home_path, "data/fire_locations.csv"), 
-                                   mode = "wb")
-                     )
-
-# Get smoke dispersion output ----
-try_smoke <- try(download.file(url = smoke_dispersion_url, 
-                               destfile = paste0(home_path, "data/smoke_dispersion.nc"), 
-                               mode = "wb")
-                 )
-
-# Check to see if there was an error in either. 
-if(class(try_locations) == "try-error" | class(try_smoke) == "try-error"){
-  line4 <- paste("THERE WAS A DOWNLOAD ERROR")
+# Re-save this as an Rdataframe with subset rows so that the app runs faster
+load_try <- try(fire_locations <- read.csv("./data/fire_locations.csv"), silent=T)
+if(class(load_try)=="try-error"){
+  stop("The fire_locations.csv contain no data. Halting download script.")
 } else{
-  line4 <- paste("Both fire locations and smoke dispersion downloaded.")
+  print("fire_locations.csv contain data.")
 }
 
-line5 <- paste("Time complete:",Sys.time())
-writeLines(c(line1, line2, line3, line4, line5), con=download_log)
+# We do not want or need most rows of fire_locations
+column_mask <- names(fire_locations) %in% c("latitude", "longitude", "type", "area")
+fire_locations <- fire_locations[,column_mask]
+save(fire_locations, file="data/fire_locations.RData")
+
+line4 <- paste("Both fire locations and smoke dispersion downloaded from")
+line5 <- paste(URL)
+line6 <- paste("Time complete:",Sys.time())
+writeLines(c(line1, line2, line3, line4, line5, line6), con=download_log)
 close(download_log) 
 
 ################################################################################
@@ -113,7 +177,7 @@ close(download_log)
 ################################################################################
 # TODO: Create a new log that documents the processing of these nc data. 
 
-fileName <- paste0(home_path,"data/smoke_dispersion.nc")
+fileName <- paste0(home_path, "data/smoke_dispersion.nc")
 
 # This function loads the most recently downloaded smoke dispersion .nc file
 # and uses the global attributes within that file to create a version of the file
@@ -124,8 +188,7 @@ bs2v2 <- function(fileName) {
   # open nc file
   old_nc <- nc_open(fileName)
   
-# Create latitude and longitude axes ----
-
+  # Create latitude and longitude axes 
   # Current (index) values
   row <- old_nc$dim$ROW$vals # lat 
   col <- old_nc$dim$COL$vals # lon
@@ -160,7 +223,7 @@ bs2v2 <- function(fileName) {
   tflag <- ncvar_get(old_nc, "TFLAG")
   
   # NOTE: 'TFLAG' is a matrix object with two rows, one containing the year and 
-  # NOTE: Julian day as YYYYDDD the other containing time in HHMMSS format. 
+  # NOTE: julian day as YYYYDDD the other containing time in HHMMSS format. 
   # NOTE: We will paste matrix elements together with 'paste()'.
   # NOTE: The 'sprintf()' function is useful for C-style string formatting.
   # NOTE: Here we use it to add leading 0s to create a string that is six characters long.
@@ -223,7 +286,7 @@ time_GMT    <- as.POSIXct(as.character(time_nc), tz="GMT")
 time_denver <- as.POSIXct(base::format(time_GMT, tz="America/Denver", usetz=TRUE))
 
 # Get day and unique days that this forecast covers 
-forecastDay <- lubridate::day(time_denver)
+forecastDay <- lubridate::day(time_denver) # of month
 unique_forecast_dates <- sort(unique(forecastDay))
 
 # Figure out the first date we have a full 24 hour forecast for
@@ -242,9 +305,13 @@ same_day_mean_smk <- mean(smoke_brick[[t_index]])
 # extract the date without timestamp (taking element date 29 from 1:29)
 same_day_date <- unique( format(time_denver[t_index], format = "%b %d %Y") )
 
+# Take the mean of the next day smoke values 
 t_index <- which((todays_day_numeric+1)==forecastDay)
 next_day_mean_smk <- mean(smoke_brick[[t_index]])
 next_day_date <- unique( format(time_denver[t_index], format = "%b %d %Y") )
+
+# A third day
+
 
 # TODO: Same more dates data and use the actual dates as the labels. 
 # creating a vector of the character dates and saving to use in shiny labels
@@ -300,54 +367,39 @@ print("-----------------------------------------------------------------------")
 print("converting smoke_stack to polygon....")
 smk_poly <- raster::rasterToPolygons(smoke_stack_app)
 
-# TODO: Review if this chunk of code needs to be run each time -----------------
-# RG 2018-08-16: Steve, is the following section new? I think with the regrid
-# approach, we don't need to recalculate proportion intersect. I'm going to
-# comment it out
+# Subset smk_polygon to only those with values > PMThresh. Make two different
+# files for the two forecast days. 
+smk_forecast_1 <- smk_poly["layer.1"][smk_poly@data$layer.1 >= PMThresh,]
+smk_forecast_2 <- smk_poly["layer.2"][smk_poly@data$layer.2 >= PMThresh,]
 
-# saving bluesky grid shapefile. We need to know the bluesky grid for overlay
-# calculations related to the health impact assessment. The grid for a given day
-# from a single forecast (common root nc file) should be the same, so save a 
-# single instance of this grid [,1]. 
-# smk_grid <- smk_poly[, 1]
-# 
-# # write smoke grid that doesn't have values, overwrite the existing layer.
-# writeOGR(obj = smk_grid, 
-#          dsn = "./data/bluesky_grid", 
-#          layer = "bluesky_grid",
-#          overwrite_layer=TRUE,
-#          driver = "ESRI Shapefile")
-# End Review -------------------------------------------------------------------
+# # remove raster files to save memory
+# rm(smoke_brick, 
+#    same_day_mean_smk, 
+#    next_day_mean_smk, 
+#    smoke_stack)
 
-# Subset smk_polygon to only those with values > 0. Previously this subset
-# by those that were creater than 5 ugm3. This made for a confusing display where 
-# there were HIA where there were no smoke. This was done to reduce file size. 
-smk_poly_display <- smk_poly[smk_poly$layer.1 > 5 | smk_poly$layer.2 > 5, ]
-
-# remove raster files to save memory
-rm(smoke_brick, 
-   same_day_mean_smk, 
-   next_day_mean_smk, 
-   smoke_stack)
-
-# Write gridded smoke polygon 
-writeOGR(obj = smk_poly_display, 
+# Write gridded smoke polygon for day 1
+writeOGR(obj = smk_forecast_1, 
          dsn = paste0(home_path,"/data/smk_poly"), 
-         layer = "smk_poly", 
+         layer = "smk_poly_1", 
          driver = "ESRI Shapefile", 
          overwrite_layer = T)
 
+# Save as RData to be loaded by the app
+save(smk_forecast_1, file=paste0(home_path, "/data/smk_poly/smk_forecast_1.RData"))
+
+# Write gridded smoke polygon for day 2
+writeOGR(obj = smk_forecast_2, 
+         dsn = paste0(home_path,"/data/smk_poly"), 
+         layer = "smk_poly_2", 
+         driver = "ESRI Shapefile", 
+         overwrite_layer = T)
+
+# Save as RData to be loaded by the app
+save(smk_forecast_2, file=paste0(home_path,"/data/smk_poly/smk_forecast_2.RData"))
+
 # remove smk poly to save space
 rm(smk_poly)
-
-################################################################################
-# Use newly saved PM grid to create bluesky_county_prop_intersect.csv
-################################################################################
-# print("Creating the intersect of bluesky grids with US counties.)
-# source(support_r_scripts/proportion_intersect_bluesky_grid_us_counties.R)
-
-# TODO: If statement that chooses the correct population weighting based on
-# TODO: the bluesky grid that is being used. 
 
 ################################################################################
 # Calculate population-weighted county smoke pm2.5 values 
@@ -461,8 +513,8 @@ us_shape$FIPS <- us_shape$GEOID
 us_shape <- sp::merge(us_shape, hia_est, by = "FIPS")
 
 # subset to counties with hia estimates of at least 1
-us_shape <- us_shape[(us_shape$same_day_pm > 5 & us_shape$same_day_resp_ed > 1) | 
-                     (us_shape$next_day_pm > 5 & us_shape$next_day_resp_ed > 1), ]
+us_shape <- us_shape[(us_shape$same_day_pm >= PMThresh & us_shape$same_day_resp_ed > 1) | 
+                     (us_shape$next_day_pm >= PMThresh & us_shape$next_day_resp_ed > 1), ]
 
 # rename truncated variable names; renamed hia estimates to layer_1 and layer_2
 # to match gridded bluesky forecasts of smoke labels
@@ -475,3 +527,5 @@ colnames(us_shape@data) <- c_names
 # save shape with hia estimates
 writeOGR(obj = us_shape, dsn = paste0(home_path,"/data/hia_poly"), 
          layer = "hia_poly", driver = "ESRI Shapefile", overwrite_layer = T)
+
+print("Script executed without error.")
