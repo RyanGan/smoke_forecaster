@@ -85,7 +85,7 @@ check_for_files <- function(URL){
       fire_locations_test <- TRUE
     }
   }
-  
+
   # See if smoke_dispersion.nc exists, if it does, download and check for size.
   smoke_dispersion_file <- paste0(URL, "/smoke_dispersion.nc")
   if(url.exists(smoke_dispersion_file)){
@@ -179,7 +179,7 @@ close(download_log)
 ################################################################################
 # TODO: Create a new log that documents the processing of these nc data. 
 
-fileName <- paste0(home_path, "data/smoke_dispersion.nc")
+fileName <- paste0(home_path, "data/smoke_dispersion_test.nc")
 
 # This function loads the most recently downloaded smoke dispersion .nc file
 # and uses the global attributes within that file to create a version of the file
@@ -272,7 +272,7 @@ bs2v2 <- function(fileName) {
 # Now run this function on the file we just downloaded. It returns time array
 # that can be used for slicing the gridded smoke data. 
 time_nc <- bs2v2(fileName) 
-print(fileName)
+
 # working with the raster brick of the nc file
 nc_path <- paste0(home_path, "data/smoke_dispersion_v2.nc")
 
@@ -305,7 +305,6 @@ t_index <- which(todays_day_numeric==forecastDay)
 
 print(forecastDay)
 
-print()
 
 print('made it here')
 
