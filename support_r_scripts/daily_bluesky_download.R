@@ -33,8 +33,6 @@ library(lubridate) # for day()
 library(data.table) # will interfere with lubridate so use libridate::FUNCTION
 
 # TODO: consider these as possible user arguments 
-# RG 2018-08-16: Ask Steve to explain his thought here
-# SB 2018-08-21: I think we may use different models output in the future. 
 model <- "GFS-0.15deg"
 PMThresh <- 2
 
@@ -52,10 +50,6 @@ if(machine_name == "salix"){
   # Local development taking place. 
   home_path <- paste0(getwd(), "/")
 }
-
-# RG 2018-08-16: Defining local home directory
-# home_path <- paste0(getwd(), "/")
-
 
 # download bluesky daily output -----------------------------------------------
 
