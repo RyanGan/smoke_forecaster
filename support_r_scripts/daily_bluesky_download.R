@@ -274,7 +274,7 @@ nc_path <- paste0(home_path, "data/smoke_dispersion_v2.nc")
 
 # get nc data as raster as class "RasterBrick"
 smoke_brick <- brick(nc_path)
-
+print("Made it here")
 ################################################################################
 # Calculate daily average smoke concentrations 
 ################################################################################
