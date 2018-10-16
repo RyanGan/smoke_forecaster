@@ -73,7 +73,7 @@ if(class(try_error) == "try-error"){
   # # Format the annoying time format YYYDD HH
   # latest_smoke$Start <- as.POSIXct(latest_smoke$Start, format = "%Y%d %H", tz="UTC")
   # latest_smoke$End <- as.POSIXct(latest_smoke$End, format = "%Y%d %H", tz="UTC")
-
+  print(home_path)
   # rewrite the file
   rgdal::writeOGR(obj = latest_smoke, 
                   dsn = paste0(home_path,"data/HMS"), 
