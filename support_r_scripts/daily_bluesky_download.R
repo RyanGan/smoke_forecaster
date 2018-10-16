@@ -51,7 +51,8 @@ if(machine_name == "salix"){
   home_path <- paste0(getwd(), "/")
 }
 
-home_path <- paste0(getwd(), "/")
+# check directory
+print(home_path)
 
 # download bluesky daily output -----------------------------------------------
 
@@ -300,6 +301,7 @@ todays_day_numeric <- as.numeric(format(Sys.Date(), "%d"))
 # Create raster layer of same day mean value and take the mean of those (hourly)
 # values for the selected date. 
 t_index <- which(todays_day_numeric==forecastDay)
+
 print(Sys.Date())
 print(time_nc)
 print(todays_day_numeric)
