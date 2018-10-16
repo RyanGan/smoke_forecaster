@@ -302,15 +302,7 @@ todays_day_numeric <- as.numeric(format(Sys.Date(), "%d"))
 # Create raster layer of same day mean value and take the mean of those (hourly)
 # values for the selected date. 
 t_index <- which(todays_day_numeric==forecastDay)
-
-print(forecastDay)
-
-
-print('made it here')
-
 same_day_mean_smk <- mean(smoke_brick[[t_index]])
-
-print(same_day_mean_smk)
 
 # extract the date without timestamp (taking element date 29 from 1:29)
 same_day_date <- unique( format(time_denver[t_index], format = "%b %d %Y") )
