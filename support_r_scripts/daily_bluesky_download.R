@@ -300,7 +300,8 @@ todays_day_numeric <- as.numeric(format(Sys.Date(), "%d"))
 # Create raster layer of same day mean value and take the mean of those (hourly)
 # values for the selected date. 
 t_index <- which(todays_day_numeric==forecastDay)
-
+print(Sys.Date())
+print(time_nc)
 print(todays_day_numeric)
 print(forecastDay)
 print(t_index)
