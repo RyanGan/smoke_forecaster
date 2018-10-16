@@ -76,7 +76,7 @@ if(class(try_error) == "try-error"){
 
   # rewrite the file
   rgdal::writeOGR(obj = latest_smoke, 
-                  dsn = paste0(home_path,"/data/HMS"), 
+                  dsn = paste0(home_path,"data/HMS"), 
                   layer = "latest_smoke_display", 
                   driver = "ESRI Shapefile", 
                   overwrite_layer = T)
@@ -86,3 +86,4 @@ if(class(try_error) == "try-error"){
 # TODO: Consider sharing this information with the user on the site. 
 print(paste("HMS smoke plumes updated at:", Sys.time()))
 print("Script run successfully.")
+
