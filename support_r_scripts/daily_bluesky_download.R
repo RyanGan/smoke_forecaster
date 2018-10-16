@@ -8,7 +8,6 @@ if(grepl('/srv/', getwd()) == TRUE){
   machine_name <- "local"
 }
 print(paste("Passed arguments:"))
-print(paste("Running on", machine_name))
 
 # ------------------------------------------------------------------------------
 # Title: Daily BlueSky forecast download and data management
@@ -51,6 +50,9 @@ if(machine_name == "salix"){
 }else{
   # Local development taking place. 
   home_path <- paste0(getwd(), "/")
+  print("-----------------------------------------------")
+  print("Code running on local machine")
+  print("-----------------------------------------------")
 }
 
 # download bluesky daily output -----------------------------------------------
@@ -270,7 +272,7 @@ bs2v2 <- function(fileName) {
 # Now run this function on the file we just downloaded. It returns time array
 # that can be used for slicing the gridded smoke data. 
 time_nc <- bs2v2(fileName) 
-
+print(fileName)
 # working with the raster brick of the nc file
 nc_path <- paste0(home_path, "data/smoke_dispersion_v2.nc")
 
@@ -301,12 +303,10 @@ todays_day_numeric <- as.numeric(format(Sys.Date(), "%d"))
 # values for the selected date. 
 t_index <- which(todays_day_numeric==forecastDay)
 
-print(Sys.Date())
-print(time_nc)
-print(todays_day_numeric)
 print(forecastDay)
-print(t_index)
-print(nlayers(smoke_brick))
+
+print()
+
 print('made it here')
 
 same_day_mean_smk <- mean(smoke_brick[[t_index]])
