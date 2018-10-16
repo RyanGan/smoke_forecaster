@@ -38,6 +38,7 @@ library(data.table) # will interfere with lubridate so use libridate::FUNCTION
 model <- "GFS-0.15deg"
 PMThresh <- 2
 
+<<<<<<< HEAD
 if(machine_name == "salix"){
   
   print("-----------------------------------------------")
@@ -52,6 +53,10 @@ if(machine_name == "salix"){
   # Local development taking place. 
   home_path <- paste0(getwd(), "/")
 }
+=======
+# RG 2018-08-16: Defining local home directory
+# home_path <- paste0(getwd(), "/")
+>>>>>>> 20cffdfa5edf35e6c8a8b6a956d72a6451f609e9
 
 # download bluesky daily output -----------------------------------------------
 
