@@ -1,10 +1,13 @@
 #!/usr/bin/env Rscript
-args = commandArgs(trailingOnly=TRUE)
-if(length(args)>0){
-  machine_name <- args[1]
+# RG Mod 2018-10-16: This seems to not be able to tell this is the salix server
+# so it uses old nc files. Modifying code to look at relative path name and if it has
+# /srv/ in it, then assume it's salix and not a local machine
+if(grepl('/srv/', getwd()) == TRUE){
+  machine_name <- 'salix'
 }else{
   machine_name <- "local"
 }
+print(paste("Passed arguments:"))
 
 ################################################################################
 # Description
