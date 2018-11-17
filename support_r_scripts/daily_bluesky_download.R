@@ -1,12 +1,13 @@
 #!/usr/bin/env Rscript
-args = commandArgs(trailingOnly=TRUE)
-if(length(args)>0){
-  machine_name <- args[1]
+# RG Mod 2018-10-16: This seems to not be able to tell this is the salix server
+# so it uses old nc files. Modifying code to look at relative path name and if it has
+# /srv/ in it, then assume it's salix and not a local machine
+if(grepl('/srv/', getwd()) == TRUE){
+  machine_name <- 'salix'
 }else{
   machine_name <- "local"
 }
 print(paste("Passed arguments:"))
-print(args)
 
 # ------------------------------------------------------------------------------
 # Title: Daily BlueSky forecast download and data management
@@ -50,7 +51,10 @@ if(machine_name == "salix"){
   
 }else{
   # Local development taking place. 
-  home_path <- paste0(getwd(), "/")
+  home_path <- paste0(getwd(), "/")  
+  print("-----------------------------------------------")
+  print("Code running on local machine")
+  print("-----------------------------------------------")
 }
 
 # download bluesky daily output -----------------------------------------------
@@ -177,7 +181,7 @@ close(download_log)
 ################################################################################
 # TODO: Create a new log that documents the processing of these nc data. 
 
-fileName <- paste0(home_path, "data/smoke_dispersion.nc")
+fileName <- paste0(home_path, "data/smoke_dispersion_test.nc")
 
 # This function loads the most recently downloaded smoke dispersion .nc file
 # and uses the global attributes within that file to create a version of the file
