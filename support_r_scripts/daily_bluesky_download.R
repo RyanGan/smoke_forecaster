@@ -70,6 +70,7 @@ url_base <- paste0("https://smoke.airfire.org/bluesky-daily/output/standard/", m
 # TODO: until the condition is satisfied. 
 check_for_files <- function(URL){
   
+  # Test statements to see if the new files that are needed exist. 
   fire_locations_test <- FALSE
   smoke_dispersion_test <- FALSE
   
@@ -259,7 +260,7 @@ bs2v2 <- function(fileName) {
   
   # Create a new netcdf file 
   fileName_v2 <- str_replace(fileName, ".nc", "_v2.nc")
-  new_nc <- nc_create(fileName_v2, pm25Var)
+  new_nc      <- nc_create(fileName_v2, pm25Var)
   
   # Put data into the newly defined variable 
   ncvar_put(new_nc, pm25Var, pm25)
@@ -269,6 +270,7 @@ bs2v2 <- function(fileName) {
   
   print("Created the new version of the smoke_dispersion.nc file.")
   return(time) # Handy for indexing values. 
+  
 }
 
 # Now run this function on the file we just downloaded. It returns time array
@@ -276,7 +278,7 @@ bs2v2 <- function(fileName) {
 time_nc <- bs2v2(fileName) 
 
 # working with the raster brick of the nc file
-nc_path <- paste0(home_path, "data/smoke_dispersion_v2.nc")
+nc_path <- paste0(home_path, "data/smoke_dispersion_test_v2.nc")
 
 # get nc data as raster as class "RasterBrick"
 smoke_brick <- brick(nc_path)
