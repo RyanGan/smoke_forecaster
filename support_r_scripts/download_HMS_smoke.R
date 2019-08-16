@@ -20,6 +20,11 @@ print(paste("Running code on:", machine_name))
 # If no new analysis is available, i.e. no polygons in the file linked online,
 # the latest file is not used, and instead, the older polygons are retained. 
 
+# This is run in a crontab. The following code shows the current setting for
+# the crontab on the server computer:
+#
+# 00 10 * * * Rscript APP_DIR/support_r_scripts/daily_bluesky_download.R salix
+
 # library(rgdal)
 # library(stringr)
 

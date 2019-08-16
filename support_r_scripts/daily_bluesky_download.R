@@ -275,7 +275,7 @@ bs2v2 <- function(fileName) {
 time_nc <- bs2v2(fileName) 
 
 # working with the raster brick of the nc file
-nc_path <- paste0(home_path, "data/smoke_dispersion_test_v2.nc")
+nc_path <- paste0(home_path, "data/smoke_dispersion_v2.nc")
 
 # get nc data as raster as class "RasterBrick"
 smoke_brick <- brick(nc_path)
