@@ -1,3 +1,17 @@
+=======
+#!/usr/bin/env Rscript
+# RG Mod 2018-10-16: This seems to not be able to tell this is the salix server
+# so it uses old nc files. Modifying code to look at relative path name and if it has
+# /srv/ in it, then assume it's salix and not a local machine
+# SB Mod 2018-11-17: Thanks for the update Ryan. I tweeked it again because 
+# there was an issue running grep from root. 
+if(as.character(Sys.info()["nodename"]) == "salix"){
+  machine_name <- 'salix'
+}else{
+  machine_name <- "local"
+}
+print(paste("Running code on:", machine_name))
+
 ################################################################################
 # Description
 ################################################################################

@@ -8,7 +8,9 @@
 library(ncdf4)
 library(tidyverse)
 
-# extracting population densities from bonne's bluesky grid -----
+# TODO: need to make sure that I have multiple versions of the bluesky population
+# TODO: grid that match daily output. 
+# Extracting population densities from Bonne's bluesky grid -----
 pop_nc <- ncdf4::nc_open("./data/blueskypopulation.nc")
 
 cali_id <- bluesky_grid$id
