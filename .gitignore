@@ -5,6 +5,7 @@
 *.RData
 *.Ruserdata
 *.html
+*.pdf
 *.pptx
 *.nc
 *.zip

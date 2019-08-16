@@ -102,7 +102,7 @@ head <- dashboardHeader(
   tags$li(class = "dropdown", tags$a(href = "https://github.com/smartenies/smoke_forecaster/blob/development/README.md", "About")),
   tags$li(class = "dropdown", tags$a(href = "mailto:Sheena.Martenies@colostate.edu", "Contact Us")),
   tags$li(class = "dropdown", tags$a(href = "https://github.com/smartenies/smoke_forecaster/issues", "Report Bug")),
-  tags$li(class = "dropdown", tags$a(href = "https://github.com/smartenies/smoke_forecaster/blob/sm_local/general_audience_information.Rmd", "More Info")),
+  tags$li(class = "dropdown", tags$a(href = "http://rpubs.com/smartenies/smokeforecaster_more_info", "More Info")),
   title = "Smoke Health Impact Assessment (HIA) Forecaster (beta)",
   titleWidth = 550
 )
