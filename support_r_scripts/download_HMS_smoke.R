@@ -1,10 +1,10 @@
-=======
 #!/usr/bin/env Rscript
 # RG Mod 2018-10-16: This seems to not be able to tell this is the salix server
 # so it uses old nc files. Modifying code to look at relative path name and if it has
 # /srv/ in it, then assume it's salix and not a local machine
 # SB Mod 2018-11-17: Thanks for the update Ryan. I tweeked it again because 
 # there was an issue running grep from root. 
+
 if(as.character(Sys.info()["nodename"]) == "salix"){
   machine_name <- 'salix'
 }else{
@@ -31,9 +31,24 @@ library(sf)
 library(rvest)
 library(rgdal)
 
+if(machine_name == "salix"){
+  
+  print("-----------------------------------------------")
+  print("Code running on salix")
+  setwd("/srv/www/rgan/smoke_forecaster/")
+  # define path to repository for the server for writing files
+  home_path <- paste0("/srv/www/rgan/smoke_forecaster/")
+  print(paste("Working directory set to:", home_path))
+  print("-----------------------------------------------")
+  
+}else{
+  # Local development taking place. 
+  home_path <- paste0(getwd(), "/Smoke_Predictor/")
+}
+
+
 # Local development taking place. 
-# home_path <- "C:/Users/apddsouth/Documents/Smoke_Predictor/"
-home_path <- "R:/RSTOR-Magzamen/Research/Projects/CO_Wildfires/Subprojects/smoke_forecaster/Smoke_Predictor/"
+# home_path <- "R:/RSTOR-Magzamen/Research/Projects/CO_Wildfires/Subprojects/smoke_forecaster/Smoke_Predictor/"
 
 today <- Sys.Date()
 today_char <- as.character(format(today, "%Y%m%d"))

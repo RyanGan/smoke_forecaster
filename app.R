@@ -9,11 +9,6 @@
 # version lighter as the server can't handle the raster brick. That code still
 # exists in the ui and server code.
 
-#### THIS VERSION IS MEANT ONLY FOR RUNNING THE SHINY APP ON A LOCAL COMPUTER.
-#### DELETE THESE LINES OF CODE AND SECTIONS THAT SAY "## uncomment this later: "
-#### BEFORE RUNNING THIS ON THE SERVER. ALSO UNDO THE "## changed in local" changes.
-
-
 #------------------------------------------#
 #-----------------SETUP--------------------#
 #------------------------------------------#
@@ -43,12 +38,10 @@ fire_pal <- colorFactor(
 hia_bin <- c(1, 10, 50, 100, 200, 300)
 
 # hia pallet
-#hia_pal <- colorBin(brewer.pal(n=length(hia_bin-2), "Purples"),
 hia_pal <- colorBin(palette=c("#bfd3e6", "#8c96c6", "#8856a7", "#810f7c"),
-                    
-                    bins = hia_bin, 
+                    bins = hia_bin,
                     na.color="transparent")
-#hia_pal <- brewer.pal(n=length(hia_bin-2), "PuRd")
+# hia_pal <- brewer.pal(n=length(hia_bin-2), "PuRd")
 
 # define color bin for predictged smoke layer
 smoke_bin <- c(1, 10, 25, 50, 200, 1000)
@@ -60,41 +53,33 @@ smoke_pal <- colorBin(brewer.pal(length(smoke_bin), "YlOrBr"),
 analyzed_plumes_color <- "grey"
 analyzed_plumes_outline_color <- "transparent"
 
-
 #------------------------------------------#
 #-----SET PATHS AND LOAD CRITICAL DATA-----#
 #------------------------------------------#
 
 # read in smoke forecast shapefile ----
 # define relative path to polygon file
-#poly_path <- "./data/smk_poly"
-poly_path <- "C:/Users/apddsouth/Documents/Smoke_Predictor/data/smk_poly" ## changed in local
+poly_path <- "./data/smk_poly"
 
 # # read bluesky forecast polygon for the two forecasted dates 
 smk_forecast_1 <- readOGR(dsn = poly_path, layer = "smk_poly_1")
 smk_forecast_2 <- readOGR(dsn = poly_path, layer = "smk_poly_2")
 
 # read in hia estimate ----
-#hia_path <- "./data/hia_poly"  # original
-hia_path <- "C:/Users/apddsouth/Documents/Smoke_Predictor/data/hia_poly"
+hia_path <- "./data/hia_poly"  # original
 hia_layer <- "hia_poly"
 
 # hia polygon
 county_hia <- readOGR(dsn = hia_path, layer = hia_layer)
 
 # Current smoke conditions
-#analyzed_plumes <- readOGR(dsn="./data/HMS", layer="latest_smoke_display") # Original path
- analyzed_plumes <- readOGR(
-   dsn="C:/Users/apddsouth/Documents/Smoke_Predictor/data/HMS", 
-   layer="latest_smoke_display")  ## modified path
+analyzed_plumes <- readOGR(dsn="./data/HMS", layer="latest_smoke_display") # Original path
 
 # Note 2017-12-29: Decided not to cap county population-wted pm, but I will need
 # to reconcile cap of grid values polygon with this
 
 # read in saved R dates ----
-#load("./data/date_label.RData") # original
-#date_labels[1] <- paste(date_labels[1], "(today)") # original
-#date_labels[2] <- paste(date_labels[2], "(tomorrow)") # original
+load("./data/date_label.RData") # original
 date_labels <- c('today', 'tomorrow')
 
 # create date names list to use with the radio button
@@ -102,14 +87,12 @@ date_list <- list("layer_1", "layer_2")
 names(date_list) <- date_labels
 
 # read in fire_locations ----
-#load(here::here("Smoke_Predictor/data/", "fire_locations.RData"))
-load("C:/Users/apddsouth/Documents/Smoke_Predictor/data/fire_locations.RData")
+load(here::here("Smoke_Predictor/data/", "fire_locations.RData"))
 
 # read when the HMS smoke plumes were updated. This creates the updated_date value, which is used later.
 # When testing this app, just set updated_date <-  [today's date] in format "YYYY-MM-DD"
-#load(here::here("Smoke_Predictor/data/HMS/", "plume_update_date.Rdata"))
-load("C:/Users/apddsouth/Documents/Smoke_Predictor/data/HMS/plume_update_date.RData")
-updated_date <- "2019-08-13" ## REMOVE THIS LATER
+load(here::here("Smoke_Predictor/data/HMS/", "plume_update_date.Rdata"))
+# updated_date <- "2019-08-13" ## REMOVE THIS LATER
 
 #------------------------------------------#
 #--------SETUP SHINY DASHBOARD UI----------#
@@ -195,7 +178,7 @@ side <- dashboardSidebar(
              # Info for Emergency Dept. Visits panel
              bsCollapsePanel(HTML('<font size="3" color="black">Emergency Dept. Visits</font>'), 
                              tags$div(style="color:black", 
-                                      HTML(paste("You can click on the counties of the <b>Emergnecy Dept. Visits</b> layer to show the expected number of 
+                                      HTML(paste("You can click on the counties of the <b>Emergency Dept. Visits</b> layer to show the expected number of 
                                       emergency department visits due to wildfire smoke exposure. 
                                       The Smoke Forecaster uses a health impact function to generate an estimate of how many
                                       additional people might visit the emergency department for any respiratory health condition or for asthma
