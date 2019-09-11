@@ -4,10 +4,14 @@
 # so it uses old nc files. Modifying code to look at relative path name and if it has
 # /srv/ in it, then assume it's salix and not a local machine
 
-if(as.character(Sys.info()["nodename"]) == "salix"){
+if(as.character(Sys.info()["nodename"]) == "salix" ){
   machine_name <- 'salix'
 }else{
-  machine_name <- "local"
+  if(as.character(Sys.info()["nodename"]) == "cvmrit03" ){
+    machine_name <- 'cvmrit03'
+  } else {
+    machine_name <- "local"
+  }
 }
 print(paste("Passed arguments:"))
 
@@ -54,13 +58,24 @@ if(machine_name == "salix"){
   home_path <- paste0("/srv/www/rgan/smoke_forecaster/")
   print(paste("Working directory set to:", home_path))
   print("-----------------------------------------------")
-  
 }else{
+  if(machine_name == "cvmrit03"){
+    
+    print("-----------------------------------------------")
+    print("Code running on cvmrit03")
+
+    # define path to repository for the server for writing files
+    home_path <- paste0(getwd(), "/")
+    print(paste("Working directory set to:", home_path))
+    print("-----------------------------------------------")
+  } else {
+  
   # Local development taking place. 
   home_path <- paste0(getwd(), "/")  
   print("-----------------------------------------------")
   print("Code running on local machine")
   print("-----------------------------------------------")
+  }
 }
 
 # download bluesky daily output -----------------------------------------------

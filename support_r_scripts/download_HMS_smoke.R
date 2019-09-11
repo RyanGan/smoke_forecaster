@@ -5,10 +5,14 @@
 # SB Mod 2018-11-17: Thanks for the update Ryan. I tweeked it again because 
 # there was an issue running grep from root. 
 
-if(as.character(Sys.info()["nodename"]) == "salix"){
+if(as.character(Sys.info()["nodename"]) == "salix" ){
   machine_name <- 'salix'
 }else{
-  machine_name <- "local"
+  if(as.character(Sys.info()["nodename"]) == "cvmrit03" ){
+    machine_name <- 'cvmrit03'
+  } else {
+    machine_name <- "local"
+  }
 }
 print(paste("Running code on:", machine_name))
 
@@ -46,10 +50,24 @@ if(machine_name == "salix"){
   home_path <- paste0("/srv/www/rgan/smoke_forecaster/")
   print(paste("Working directory set to:", home_path))
   print("-----------------------------------------------")
-  
 }else{
-  # Local development taking place. 
-  home_path <- paste0(getwd(), "/")
+  if(machine_name == "cvmrit03"){
+    
+    print("-----------------------------------------------")
+    print("Code running on cvmrit03")
+    
+    # define path to repository for the server for writing files
+    home_path <- paste0(getwd(), "/")
+    print(paste("Working directory set to:", home_path))
+    print("-----------------------------------------------")
+  } else {
+    
+    # Local development taking place. 
+    home_path <- paste0(getwd(), "/")  
+    print("-----------------------------------------------")
+    print("Code running on local machine")
+    print("-----------------------------------------------")
+  }
 }
 
 today <- Sys.Date()
