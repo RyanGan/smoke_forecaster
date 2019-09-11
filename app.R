@@ -3,6 +3,10 @@
 # Author: Ryan Gan 
 # Date Created: 2017-06-17
 # R Version 3.4.0 
+# 
+# Updated by David South and Sheena Martenies
+# Date updated: 2019-09-11
+# R Version 3.6.1
 # ------------------------------------------------------------------------------
 
 # note this script contains both ui and server function. I modified to make this 
@@ -20,7 +24,6 @@ library(shinyBS)
 library(leaflet)
 library(rgdal) # for read shapefile
 library(stringr)
-library(RColorBrewer) # to get pretty colors that are colorblind friendly
 
 
 #------------------------------------------#
@@ -43,9 +46,9 @@ hia_pal <- colorBin(palette=c("#bfd3e6", "#8c96c6", "#8856a7", "#810f7c"),
                     na.color="transparent")
 # hia_pal <- brewer.pal(n=length(hia_bin-2), "PuRd")
 
-# define color bin for predictged smoke layer
+# define color bin for predicted smoke layer
 smoke_bin <- c(1, 10, 25, 50, 200, 1000)
-smoke_pal <- colorBin(brewer.pal(length(smoke_bin), "YlOrBr"), 
+smoke_pal <- colorBin(palette = c("#FFFFD4", "#FEE391", "#FEC44F", "#FE9929", "#D95F0E", "#993404"), 
                       domain = c(1, 1000), 
                       bins = smoke_bin,
                       na.color = "black") # "#F0F2F0", "#000c40"
@@ -87,11 +90,11 @@ date_list <- list("layer_1", "layer_2")
 names(date_list) <- date_labels
 
 # read in fire_locations ----
-load(here::here("Smoke_Predictor/data/", "fire_locations.RData"))
+load(here::here("data", "fire_locations.RData"))
 
 # read when the HMS smoke plumes were updated. This creates the updated_date value, which is used later.
 # When testing this app, just set updated_date <-  [today's date] in format "YYYY-MM-DD"
-load(here::here("Smoke_Predictor/data/HMS/", "plume_update_date.Rdata"))
+load(here::here("data/HMS", "plume_update_date.rdata"))
 # updated_date <- "2019-08-13" ## REMOVE THIS LATER
 
 #------------------------------------------#
@@ -119,7 +122,7 @@ side <- dashboardSidebar(
   ## Show the forecast hour for the smoke data being displayed
   ## uncomment this later: fluidRow(
   ## uncomment this later:   column(align="center", width=12,
-           #p(paste0("Model Run: ", forecast_date, " ",forecast_hour, "Z"))
+  #p(paste0("Model Run: ", forecast_date, " ",forecast_hour, "Z"))
   ## uncomment this later:          p(tags$a(href = forecast_url, 
   ## uncomment this later:                   paste0("Model Run Used: ", forecast_date, " ", forecast_hour, "Z")))
   ## uncomment this later:          )
@@ -141,12 +144,12 @@ side <- dashboardSidebar(
                                       Canada. <span style=\"color: red\">Wildfires (WF)</span> are shown in red and 
                                       <span style=\"color: orange\">prescribed burns (RX)</span> are shown in yellow.
                                       RX burns are generally smaller and are continuously monitored by fire crews.",
-                                      "The locations come from from BlueSky, a model developed by the
+                                                 "The locations come from from BlueSky, a model developed by the
                                       United States Forest Service. View BlueSky data 
                                       <a href=\"https://tools.airfire.org/websky/v1/#status\" style=\"color:#0C81A9\">here</a>,
                                       more information about the BlueSky model 
                                       <a href=\"https://www.fs.fed.us/bluesky/about/\" style=\"color:#0C81A9\">here</a>.",
-                                      sep="<br><br/>"))), 
+                                                 sep="<br><br/>"))), 
                              style = "info"),
              
              # Info for forecasted smoke panel
@@ -154,13 +157,13 @@ side <- dashboardSidebar(
                              tags$div(style="color:black", 
                                       HTML(paste("The <b>Forecasted Smoke Concentration</b> layer uses data from the BlueSky model (see <b>Fire Locations</b> tab)
                                       to estimate the ground-level concentrations of smoke due to wildfires.", 
-                                      "Hover your mouse over an area with wildfire smoke to see smoke concentration and
+                                                 "Hover your mouse over an area with wildfire smoke to see smoke concentration and
                                       the Relative Risk values. Respiratory and Asthma Relative Risk levels above 1
                                       indicate that people exposed to the smoke have a higher chance of going to the emergency department.",
-                                      "The Smoke Forecaster uses the values modeled in this layer to estimate the number
+                                                 "The Smoke Forecaster uses the values modeled in this layer to estimate the number
                                       of emergency department visits that might occur due to wildfire smoke exposure, shown in 
                                       the <b>Emergency Dept. Visits</b> layer.",
-                                      sep="<br><br/>"))), 
+                                                 sep="<br><br/>"))), 
                              style = "info"),
              
              # Info for smoke plumes panel
@@ -169,11 +172,11 @@ side <- dashboardSidebar(
                                       HTML(paste("The <b>Visible Smoke Plumes</b> layer shows wildfire smoke plumes visible from satellite imagery. 
                                       The data are generated each day by analysts for the Hazard Mapping System (HMS) which 
                                       is run by the National Oceanic and Atmospheric Association (NOAA).", 
-                                      "Occasionally the daily HMS data will not have been released
+                                                 "Occasionally the daily HMS data will not have been released
                                       by the time the Smoke Forecaster is updated. In this case, the Visible Smoke Plumes 
                                       layer will not be displayed. The layer is also disabled when the Smoke Forecaster date
                                       is set to tomorrow.",
-                                      sep="<br><br/>"))), 
+                                                 sep="<br><br/>"))), 
                              style = "info"),
              # Info for Emergency Dept. Visits panel
              bsCollapsePanel(HTML('<font size="3" color="black">Emergency Dept. Visits</font>'), 
@@ -183,10 +186,10 @@ side <- dashboardSidebar(
                                       The Smoke Forecaster uses a health impact function to generate an estimate of how many
                                       additional people might visit the emergency department for any respiratory health condition or for asthma
                                       in particular.",
-                                      "This estimate is based on the concentration of wildfire smoke in the air, the typical
+                                                 "This estimate is based on the concentration of wildfire smoke in the air, the typical
                                       number of emergency department visits per day for county, the number of people 
                                       who live in the county, and the relationship between wildfire smoke and emergency department visits.",
-                                      sep="<br><br/>"))), 
+                                                 sep="<br><br/>"))), 
                              style = "info"))
 ) # end side bar
 
@@ -208,7 +211,7 @@ ui <- dashboardPage(head, side, body, skin = "black")
 #------------------------------------------#
 
 server <- (function(input, output){
-
+  
   # add base leaflet map
   output$map <- renderLeaflet({
     
@@ -242,21 +245,21 @@ server <- (function(input, output){
                 title = htmltools::HTML("Forecasted Smoke Concentration (PM<sub>2.5</sub>, <span>&#181;</span>g/m<sup>3</sup>)"),
                 position = "bottomleft",
                 group="Forecasted Smoke") %>%
-    
+      
       # add legend for Emergency Dept. Visits
       addLegend(pal=hia_pal,
                 values=hia_bin,
                 title = htmltools::HTML("<strong>Emergency Dept. Visits</strong>"),
                 position = "bottomleft",
                 group="Emergency Dept. Visits") %>% 
-    
+      
       # add legend for Fire Locations
       addLegend(pal=fire_pal,
-              values=c("WF", "RX"),
-              title = htmltools::HTML("<strong>Fire Locations</strong>"),
-              position = "bottomright",
-              group="Fire Locations")
-
+                values=c("WF", "RX"),
+                title = htmltools::HTML("<strong>Fire Locations</strong>"),
+                position = "bottomright",
+                group="Fire Locations")
+    
   })# end base leaflet
   
   # add interactive polygon layers -----
@@ -274,7 +277,7 @@ server <- (function(input, output){
       vals <- reactive({getElement(smk_forecast_2@data, layer_name)})
       smk_forecast_display <- smk_forecast_2
     }
-
+    
     # Smoke Concentration: value ug/m^3 \return
     # Relative Increase in Risk: value %
     pm_label <- sprintf(paste0(
@@ -293,7 +296,7 @@ server <- (function(input, output){
     hia_vals <- reactive({getElement(county_hia@data, layer_name)})
     hia_county_name <- reactive({getElement(county_hia@data, "NAME")}, quoted=T)
     hia_county_pop <- reactive({getElement(county_hia@data, "Pop")})
-  
+    
     # call proxy map
     leafletProxy(mapId="map") %>%
       clearShapes() %>% 
@@ -316,7 +319,7 @@ server <- (function(input, output){
                   labelOptions = labelOptions(style = list("font-weight" = "normal", 
                                                            padding = "3px 8px"), 
                                               textsize = "12px", direction = "auto")
-                  ) %>% 
+      ) %>% 
       
       # add HIA polygon
       addPolygons(data = county_hia, 
@@ -340,7 +343,7 @@ server <- (function(input, output){
                                                            padding = "3px 8px"),
                                               textsize = "12px",
                                               direction = "auto")
-                  )  %>% 
+      )  %>% 
       
       {if (layer_name=="layer_1" & updated_date==Sys.Date())
         addPolygons(., data = analyzed_plumes,
@@ -352,7 +355,7 @@ server <- (function(input, output){
                     fillColor = "Gray",
                     stroke = FALSE,
                     label = "Smoke plume drawn by HMS analyst"
-                    ) else .} %>%
+        ) else .} %>%
       
       # add Fire Locations
       addCircleMarkers(data = fire_locations, 
@@ -375,11 +378,11 @@ server <- (function(input, output){
                           "Emergency Dept. Visits"),
         options = layersControlOptions(collapsed = F))
         else addLayersControl(.,
-          overlayGroups = c("Fire Locations",
-                            "Forecasted Smoke Concentration",
-                            "Emergency Dept. Visits"),
-          options = layersControlOptions(collapsed = F))
-        }%>%
+                              overlayGroups = c("Fire Locations",
+                                                "Forecasted Smoke Concentration",
+                                                "Emergency Dept. Visits"),
+                              options = layersControlOptions(collapsed = F))
+      }%>%
       
       # Set default hidden groups 
       hideGroup(group=c("Forecasted Smoke Concentration", "Visible Smoke Plumes", "Emergency Dept. Visits"))

@@ -1,7 +1,9 @@
+
 #!/usr/bin/env Rscript
 # RG Mod 2018-10-16: This seems to not be able to tell this is the salix server
 # so it uses old nc files. Modifying code to look at relative path name and if it has
 # /srv/ in it, then assume it's salix and not a local machine
+
 if(as.character(Sys.info()["nodename"]) == "salix"){
   machine_name <- 'salix'
 }else{
@@ -14,8 +16,12 @@ print(paste("Passed arguments:"))
 # Authors: Ryan Gan & Steven Brey 
 # Date Created: 6/19/2017. Heavy modification began 7/20/2018. See github.
 # Created under R Version: 3.3.3
+# 
+# Updated by David South and Sheena Martenies
+# Date updated: 2019-09-11
+# R Version 3.6.1
 # ------------------------------------------------------------------------------
-#
+
 # This is run in a crontab. The following code shows the current setting for
 # the crontab on the server computer:
 #
@@ -51,7 +57,10 @@ if(machine_name == "salix"){
   
 }else{
   # Local development taking place. 
-  home_path <- paste0(getwd(), "/Smoke_Predictor/")
+  home_path <- paste0(getwd(), "/")  
+  print("-----------------------------------------------")
+  print("Code running on local machine")
+  print("-----------------------------------------------")
 }
 
 # download bluesky daily output -----------------------------------------------
@@ -110,7 +119,7 @@ check_for_files <- function(URL){
     # When we have both, rename these files, get rid of appended "test" at 
     # end of name
     file.rename(fire_locations_dest, paste0(home_path, "data/fire_locations.csv"))
-    file.rename(smoke_dispersion_dest, paste0(home_path, "data/smoke_dispersion.nc"))
+    file.rename(smoke_dispersion_dest, paste0(home_path, "data/smoke_dispersion_test.nc"))
     
   } else{
     result <- FALSE
@@ -145,7 +154,7 @@ while(dataSearch){
   date_to_check <- paste0(gsub("-","", Sys.Date()-loopCount))
   
 }
- 
+
 print(paste("Fire and smoke data aquired for:", forecast_date, forecast_hour))
 
 # Create a file connection that will log what this script tries to do and when
@@ -156,7 +165,7 @@ line2 <- paste("Forecast Date:", forecast_date)
 line3 <- paste("Forecast Hour:", forecast_hour)
 
 # Re-save this as an Rdataframe with subset rows so that the app runs faster
-load_try <- try(fire_locations <- read.csv(paste0(home_path, "data/fire_locations.csv")), silent=T)
+load_try <- try(fire_locations <- read.csv("./data/fire_locations.csv"), silent=T)
 if(class(load_try)=="try-error"){
   stop("The fire_locations.csv contain no data. Halting download script.")
 } else{
@@ -166,8 +175,7 @@ if(class(load_try)=="try-error"){
 # We do not want or need most rows of fire_locations
 column_mask <- names(fire_locations) %in% c("latitude", "longitude", "type", "area")
 fire_locations <- fire_locations[,column_mask]
-paste0(home_path, "data/smoke_dispersion.nc")
-save(fire_locations, file=paste0(home_path, "data/fire_locations.RData"))
+save(fire_locations, file="data/fire_locations.RData")
 
 line4 <- paste("Both fire locations and smoke dispersion downloaded from")
 line5 <- paste(URL)
@@ -179,14 +187,15 @@ close(download_log)
 # saved smoke netcdf file manipulaton 
 ################################################################################
 # TODO: Create a new log that documents the processing of these nc data. 
-fileName <- paste0(home_path, "data/smoke_dispersion.nc")
+
+fileName <- paste0(home_path, "data/smoke_dispersion_test.nc")
 
 # This function loads the most recently downloaded smoke dispersion .nc file
 # and uses the global attributes within that file to create a version of the file
 # with nicer dimension labels. The new nc file is saved with the same name with
 # "v2 appended. 
 bs2v2 <- function(fileName) {
-
+  
   # open nc file
   old_nc <- nc_open(fileName)
   
@@ -275,7 +284,7 @@ bs2v2 <- function(fileName) {
 time_nc <- bs2v2(fileName) 
 
 # working with the raster brick of the nc file
-nc_path <- paste0(home_path, "data/smoke_dispersion_v2.nc")
+nc_path <- paste0(home_path, "data/smoke_dispersion_test_v2.nc")
 
 # get nc data as raster as class "RasterBrick"
 smoke_brick <- brick(nc_path)
@@ -335,7 +344,7 @@ smoke_stack <- brick(same_day_mean_smk, next_day_mean_smk)
 # model skill/accuracy on the same day and next day.  
 
 # RG 2018-08-16: Steve, moved this up from below to regrid smoke stack
-population_grid <- data.table::fread(paste0(home_path,"data/2015-bluesky_grid_population.csv"))
+population_grid <- data.table::fread("./data/2015-bluesky_grid_population.csv")
 # Old grid was on a east-west 468 to south_north 201 dimension grid
 # Defining app grid extent based on min and max lat/lon values
 app_extent <- extent(min(population_grid[,1]), max(population_grid[,1]),
@@ -403,7 +412,6 @@ save(smk_forecast_2, file=paste0(home_path,"/data/smk_poly/smk_forecast_2.RData"
 
 # remove smk poly to save space
 rm(smk_poly)
-####### RETURN HERE
 
 ################################################################################
 # Calculate population-weighted county smoke pm2.5 values 
@@ -411,7 +419,7 @@ rm(smk_poly)
 # Read in proportion-intersect matrix between grid and county shapes
 # NOTE: attempting to view this table in RStudio will kill RStudio. 
 # NOTE: file created by proportion_intersect_bluesky_grid_us_counties.R 
-grid_county_pi <- data.table::fread(paste0(home_path,"/data/bluesky_county_prop_intersect.csv"))
+grid_county_pi <- data.table::fread("./data/bluesky_county_prop_intersect.csv")
 
 # Get dimensions for subset indexing
 # GCP = short for "grid_county_pi", second number is number of US counties.
@@ -475,7 +483,7 @@ rm(county_grid_pm_mat, county_pop_wt_smk, pi_mat, pm_mat, popden,
 
 # read county populations
 county_pop <- data.table::fread(paste0("./data/us_census_county_population/",
-  "PEP_2015_PEPANNRES_with_ann.csv"))[-1, c(2,11)]
+                                       "PEP_2015_PEPANNRES_with_ann.csv"))[-1, c(2,11)]
 
 # assign names: FIPS and pop_2015
 colnames(county_pop) <- c("FIPS", "pop_2015")
@@ -492,10 +500,10 @@ hia_est$base_resp_rate <- 1.285/10000
 hia_est$resp_beta <- log(1.052)
 # calculate expected respiratory ED visits
 hia_est$same_day_resp_ed <- round((hia_est$base_resp_rate * 
-  (1-exp(-(hia_est$resp_beta) * hia_est$same_day_pm)) * hia_est$pop_2015),0)
+                                     (1-exp(-(hia_est$resp_beta) * hia_est$same_day_pm)) * hia_est$pop_2015),0)
 # next day
 hia_est$next_day_resp_ed <- round((hia_est$base_resp_rate * 
-  (1-exp(-(hia_est$resp_beta) * hia_est$next_day_pm)) * hia_est$pop_2015),0)
+                                     (1-exp(-(hia_est$resp_beta) * hia_est$next_day_pm)) * hia_est$pop_2015),0)
 
 # Notes on HIA: 2017-12-29
 # need to rename hia_estimate column names to avoid truncation when saving polygon
@@ -518,7 +526,7 @@ us_shape <- sp::merge(us_shape, hia_est, by = "FIPS")
 
 # subset to counties with hia estimates of at least 1
 us_shape <- us_shape[(us_shape$same_day_pm >= PMThresh & us_shape$same_day_resp_ed > 1) | 
-                     (us_shape$next_day_pm >= PMThresh & us_shape$next_day_resp_ed > 1), ]
+                       (us_shape$next_day_pm >= PMThresh & us_shape$next_day_resp_ed > 1), ]
 
 # rename truncated variable names; renamed hia estimates to layer_1 and layer_2
 # to match gridded bluesky forecasts of smoke labels

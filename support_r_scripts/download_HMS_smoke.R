@@ -12,21 +12,22 @@ if(as.character(Sys.info()["nodename"]) == "salix"){
 }
 print(paste("Running code on:", machine_name))
 
-################################################################################
-# Description
-################################################################################
+
+# ------------------------------------------------------------------------------
+# Title: Daily HMS smoke plume download 
+# Authors: Ryan Gan & Steven Brey 
+# Date Created: 6/19/2017
+# Created under R Version: 3.3.3
+# 
+# Updated by David South and Sheena Martenies
+# Date updated: 2019-09-11
+# R Version 3.6.1
+# ------------------------------------------------------------------------------
+
 # This script downloads the latest HMS smoke plume analysis available from 
 # the archive at https://www.ospo.noaa.gov/Products/land/hms.html
 # If no new analysis is available, i.e. no polygons in the file linked online,
 # the latest file is not used, and instead, the older polygons are retained. 
-
-# This is run in a crontab. The following code shows the current setting for
-# the crontab on the server computer:
-#
-# 00 10 * * * Rscript APP_DIR/support_r_scripts/daily_bluesky_download.R salix
-
-# library(rgdal)
-# library(stringr)
 
 library(tidyverse)
 library(readxl)
@@ -48,12 +49,8 @@ if(machine_name == "salix"){
   
 }else{
   # Local development taking place. 
-  home_path <- paste0(getwd(), "/Smoke_Predictor/")
+  home_path <- paste0(getwd(), "/")
 }
-
-
-# Local development taking place. 
-# home_path <- "R:/RSTOR-Magzamen/Research/Projects/CO_Wildfires/Subprojects/smoke_forecaster/Smoke_Predictor/"
 
 today <- Sys.Date()
 today_char <- as.character(format(today, "%Y%m%d"))
@@ -85,29 +82,52 @@ copy_files <- list.files(paste0(home_path, "data/HMS/Temp/data/oper/newhms/outpu
 updated_date <- today
 updated_name <- paste0("hms_smoke", today_char, ".prelim")
 
-#' If copy files is empty, it means the "latest_smoke" file is not yet available
+smoke_sf <- st_read(paste0(home_path, "data/HMS/Temp/data/oper/newhms/output"),
+                    updated_name)
+
+#' If copy files is empty or if nrow(today_sf) == 0 it means the "latest_smoke" 
+#' file is not yet available
 #' We can try the next most recent day or scrape this section all together
-check_date <- today
-while(length(copy_files) == 0) {
+check_date <- today - 1
+
+while(length(copy_files) == 0 | nrow(smoke_sf) == 0) {
+  do.call(file.remove, list(list.files(paste0(home_path, "data/HMS/Temp/data/oper/newhms/output"), 
+                                       full.names = TRUE)))
+  
   check_char <- as.character(format(check_date, "%Y%m%d"))
   
   hms_previous <- filter(hms_files, str_detect(hms_files, check_char)) %>% 
-    filter(str_detect(hms_files, ".zip"))
+    filter(str_detect(hms_files, ".zip")) %>% 
+    filter(!str_detect(hms_files, "prelim"))
   
-  #if(nrow(hms_previous) == 0) break
-  
-  download.file(paste0(urlBase, hms_previous$hms_files[1]), 
-                destfile = paste0(home_path, "data/HMS/Temp/temp.zip"),
-                cacheOK = FALSE)
-  
-  unzip(paste0(home_path, "data/HMS/Temp/temp.zip"), 
-        exdir = paste0(home_path, "data/HMS/Temp"))
-  
-  copy_files <- list.files(paste0(home_path, "data/HMS/Temp/data/oper/newhms/output"))
-  
-  updated_date <- check_date
   updated_name <- gsub(".zip", "", hms_previous$hms_files[1])
-  check_date <- check_date + 1
+  
+  try_download <- try(
+    download.file(paste0(urlBase, hms_previous$hms_files[1]), 
+                  destfile = paste0(home_path, "data/HMS/Temp/temp.zip"),
+                  cacheOK = FALSE)
+  )
+  
+  if(class(try_download) == "try-error") {
+    
+    print("No polygon features in the latest file. Not updating for now.")
+    
+    
+  } else {
+    download.file(paste0(urlBase, hms_previous$hms_files[1]), 
+                  destfile = paste0(home_path, "data/HMS/Temp/temp.zip"),
+                  cacheOK = FALSE)
+    
+    unzip(paste0(home_path, "data/HMS/Temp/temp.zip"), 
+          exdir = paste0(home_path, "data/HMS/Temp"))
+    
+    copy_files <- list.files(paste0(home_path, "data/HMS/Temp/data/oper/newhms/output"))
+    smoke_sf <- st_read(paste0(home_path, "data/HMS/Temp/data/oper/newhms/output"),
+                        updated_name)
+    
+    updated_date <- check_date
+    check_date <- check_date + 1
+  }
 } 
 
 updated_date
@@ -139,19 +159,19 @@ try_error <- try(
 #' The same try-error code as Ryan and Steve
 
 if(class(try_error) == "try-error") {
-
+  
   print("No polygon features in the latest file. Not updating for now.")
-
+  
 } else {
-
+  
   print("Features in the latest smoke file. Updating the existing.")
-  plot(st_geometry(latest_smoke))
+  # plot(st_geometry(latest_smoke))
   
   #' Save the updated date as a .rdata 
   #' Maybe we can have a switch that basically only displays the plumes if the data
   #' have been updated (i.e., updated_date == today)
   save(updated_date,  file = paste0(smoke_path, "/plume_update_date.rdata"))
-
+  
   # rewrite the file
   st_write(latest_smoke, 
            dsn = paste0(home_path,"data/HMS"), 
@@ -164,7 +184,7 @@ if(class(try_error) == "try-error") {
   #                 layer = "latest_smoke_display",
   #                 driver = "ESRI Shapefile",
   #                 overwrite_layer = T)
-
+  
 }
 
 # TODO: Consider sharing this information with the user on the site.
